@@ -22,7 +22,7 @@ The general clustering stability assessment workflow can be found in the templat
 
 ## Downstream Analysis
 
-Ileum, colon, and rectum specific analyses can be found in the respective directories. This includes the clustering stability assessment as well as downstream analysis. Code for the integrative GWAS summary statistic and single cell RNA seq analysis was adapted from (Duncan et al.)[https://github.com/Integrative-Mental-Health-Lab/linking_cell_types_to_brain_phenotypes.git].
+Ileum, colon, and rectum specific analyses can be found in the respective directories. This includes the clustering stability assessment as well as downstream analysis. Code for the integrative GWAS summary statistic and single cell RNA seq analysis was adapted from [Duncan et al.](https://github.com/Integrative-Mental-Health-Lab/linking_cell_types_to_brain_phenotypes.git).
 
 
   
