@@ -8661,31 +8661,45 @@ pheatmap(spearman_matrix_high_low_pval,
 
 library(GO.db)
 library(biomaRt)
-
 library(clusterProfiler)
 library(org.Hs.eg.db)  # Use appropriate annotation package for your organism
 
 #load in seurat object 
 ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_scITD_groupInfo_11_20_24.rds")
 
+DefaultAssay(ileum) <- "RNA"
 #do this on server 
 #set idents to group 
 Idents(ileum) <- ileum$group
 
-ileum_counts <- AverageExpression(ileum, assays = "RNA", group.by = "group", layer = "data")
+# Get log1p-normalized data
+log1p_data <- GetAssayData(ileum, slot = "data")
 
-write.csv(ileum_counts, file = "/storage/home/swashburn30/Helmsley/Batch1_13/DEG_analysis/helm_batch1_13_ileum_group_avg_counts.csv")
+# Convert log1p-normalized data in "data" slot to log2
+log2_data <- log2(expm1(as.matrix(log1p_data)) + 1)
+
+# Create a new assay object
+log2_assay <- CreateAssayObject(data = log2_data)
+
+# Add the new assay to the Seurat object
+ileum[["RNA_log2"]] <- log2_assay
+
+#new assay as default assay 
+DefaultAssay(ileum) <- "RNA_log2"
+
+ileum_counts <- AverageExpression(ileum, assays = "RNA_log2", group.by = "group")
+
+write.csv(ileum_counts, file = "/storage/home/swashburn30/Helmsley/Batch1_13/DEG_analysis/helm_batch1_13_ileum_group_avg_log2_counts.csv")
 
 #---read in counts----# 
-ileum_counts <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_group_avg_counts.csv")
+ileum_counts <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_group_avg_log2_counts.csv")
 
 rownames(ileum_counts) <- ileum_counts$X
 
 colnames(ileum_counts) <- c("genes", "group_1", "group_2")
 
-
-# Add a small constant (e.g., 1) to handle zeros
-ileum_counts$log2FC <- log2((ileum_counts$group_1 + 1) / (ileum_counts$group_2 + 1))
+#calculate log2FC
+ileum_counts$log2FC <- ileum_counts$group_1 - ileum_counts$group_2
 
 #positive is up in group 1
 #negative is up in group 2
@@ -8694,13 +8708,15 @@ ileum_counts$log2FC <- log2((ileum_counts$group_1 + 1) / (ileum_counts$group_2 +
 #ileum_counts$sig <- ifelse(ileum_counts$log2FC > 0, 1, -1)
 
 ileum_counts$log2FC <- as.numeric(ileum_counts$log2FC)
+ileum_counts$group_1 <- as.numeric(ileum_counts$group_1)
+ileum_counts$group_2 <- as.numeric(ileum_counts$group_2)
+
 
 #ileum_counts$sig_strict <- ifelse(ileum_counts$log2FC > 1, 1, ifelse(ileum_counts$log2FC < -1, -1, NA))
 
 #use this threshold (1 was too high)
 ileum_counts$sig_strict <- ifelse(ileum_counts$log2FC > 0.25, 1,
                                   ifelse(ileum_counts$log2FC < -0.25, -1, NA))
-
 
 # Example GO term: "GO:0006955" (immune response)
 
@@ -8724,7 +8740,7 @@ genes_GO0008237 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0008237$SYMBOL) #170 
 
 overlap <- ileum_counts[ileum_counts$gene %in% genes_GO0008237$SYMBOL,]
-table(overlap$sig_strict) #4, 18
+table(overlap$sig_strict) #4, 19
 
 #response to TNF
 go_term <- "GO:0034612"  # Replace with your GO term ID
@@ -8737,7 +8753,7 @@ genes_GO0034612 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0034612$SYMBOL) #235
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0034612$SYMBOL,]
-table(overlap$sig_strict) #18,17
+table(overlap$sig_strict) #18,15
 
 #cytokine activity 
 
@@ -8753,7 +8769,7 @@ genes_GO0005125 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0005125$SYMBOL) #203
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0005125$SYMBOL,]
-table(overlap$sig_strict) #13,5
+table(overlap$sig_strict) #15,6
 
 #response to LPS 
 
@@ -8769,7 +8785,7 @@ genes_GO0032496 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0032496$SYMBOL) #315
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0032496$SYMBOL,]
-table(overlap$sig_strict) #22,14 
+table(overlap$sig_strict) #21,15 
 
 #collagen binding 
 
@@ -8785,7 +8801,7 @@ genes_GO0005518 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0005518$SYMBOL) #67
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0005518$SYMBOL,]
-table(overlap$sig_strict) #3,2
+table(overlap$sig_strict) #5,2
 
 #inflammatory response 
 
@@ -8799,7 +8815,7 @@ genes_GO0006954 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0006954$SYMBOL) #752
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0006954$SYMBOL,]
-table(overlap$sig_strict) #50,34
+table(overlap$sig_strict) #50,32
 
 #collagen catabolic process 
 
@@ -8812,7 +8828,7 @@ genes_GO0030574 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0030574$SYMBOL) #43
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0030574$SYMBOL,]
-table(overlap$sig_strict) #1,3
+table(overlap$sig_strict) #4,4
 
 #neutrophil chemotaxis 
 
@@ -8827,7 +8843,7 @@ genes_GO0030593 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0030593$SYMBOL) #102
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0030593$SYMBOL,]
-table(overlap$sig_strict) #20,6
+table(overlap$sig_strict) #21,6
 
 #neutrophil migration 
 
@@ -8842,7 +8858,7 @@ genes_GO1990266 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO1990266$SYMBOL) #124
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO1990266$SYMBOL,]
-table(overlap$sig_strict) #20,6
+table(overlap$sig_strict) #21,6
 
 #chemokine receptor binding 
 
@@ -8857,7 +8873,7 @@ genes_GO0042379 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0042379$SYMBOL) #59
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0042379$SYMBOL,]
-table(overlap$sig_strict) #7,1
+table(overlap$sig_strict) #8,1
 
 #response to bacterium 
 
@@ -8872,7 +8888,7 @@ genes_GO0009617 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0009617$SYMBOL) #668
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0009617$SYMBOL,]
-table(overlap$sig_strict) #56, 40
+table(overlap$sig_strict) #63, 39
 
 #response to wounding 
 
@@ -8887,7 +8903,7 @@ genes_GO0009611 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0009611$SYMBOL) #549
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0009611$SYMBOL,]
-table(overlap$sig_strict) #22,42
+table(overlap$sig_strict) #23,40
 
 #cytokine receptor binding 
 
@@ -8902,7 +8918,7 @@ genes_GO0005126 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0005126$SYMBOL) #235
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0005126$SYMBOL,]
-table(overlap$sig_strict) #13,7
+table(overlap$sig_strict) #13,6
 
 #ECM disassembly 
 
@@ -8917,7 +8933,7 @@ genes_GO0022617 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0022617$SYMBOL) #60
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0022617$SYMBOL,]
-table(overlap$sig_strict) #3,3
+table(overlap$sig_strict) #5,3
 
 
 #growth factor binding 
@@ -8936,7 +8952,7 @@ overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0019838$SYMBOL,]
 table(overlap$sig_strict) #7,3
 
 
-#ecm orangization 
+#ecm organization 
 
 #GO:0030198
 
@@ -8949,7 +8965,7 @@ genes_GO0030198 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0030198$SYMBOL) #303
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0030198$SYMBOL,]
-table(overlap$sig_strict) #3,14
+table(overlap$sig_strict) #5,12
 
 
 #fibronectin binding 
@@ -8965,7 +8981,9 @@ genes_GO0001968 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0001968$SYMBOL) #29
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0001968$SYMBOL,]
-table(overlap$sig_strict) #2,2
+table(overlap$sig_strict) #1,2
+
+#ECM structural constituent
 
 #GO:0005201
 
@@ -8979,7 +8997,7 @@ genes_GO0005201 <- bitr(get(go_term, org.Hs.egGO2ALLEGS), fromType = "ENTREZID",
 intersect(ileum_counts$genes, genes_GO0005201$SYMBOL) #159
 
 overlap <- ileum_counts[ileum_counts$genes %in% genes_GO0005201$SYMBOL,]
-table(overlap$sig) #2,7
+table(overlap$sig) #2,5
 
 #-------read in pathways for bar chart--------#
 
@@ -9046,7 +9064,7 @@ ileum$cell_typev2 <- plyr::mapvalues(
 ileum$cell_typev2 <- factor(ileum$cell_typev2, levels = c("Naive B Cell", "Memory B Cell", "Plasma Cell", "Cycling Plasma Cell", "CD4 T Cell", "NK/CD8 T Cell", "Ambig. T Cell", "Macrophage", "Monocyte", "Pro-Inflammatory Monocyte", "Mast Cell", "Stem/Paneth Cell", "Enterocyte", "Goblet Cell", "Cycling Cell", "Tuft Cell", "Mesenchymal Cell", "Endothelial Cell"))
 
 
-#ECM organization 
+#ECM activity genes  
 
 ecm_genes <- intersect(ileum_counts$genes, genes_GO0030198$SYMBOL) #303
 
@@ -9058,7 +9076,7 @@ ileum_gene <- rownames(ileum)
 
 ecm_ileum <- intersect(ecm_genes, ileum_gene) #303
 
-#number of genes in ecm_genes adn ecm_ileum are the same
+#number of genes in ecm_genes and ecm_ileum are the same
 
 ileum <- AddModuleScore_UCell(ileum, features = list(ecm_genes), name = "ecm_sig")
 
@@ -9082,14 +9100,34 @@ met_pep_ileum <- intersect(met_pep_genes, ileum_gene) #170
 
 ileum <- AddModuleScore_UCell(ileum, features = list(met_pep_genes), name = "met_pep_sig")
 
+#read in seurat object 
+ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_group_mod_score.rds")
 
 VlnPlot(ileum, features = "signature_1met_pep_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
+
+VlnPlot(ileum, features = "signature_1met_pep_bias_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
 
 plot2 <- VlnPlot(ileum, features = "signature_1met_pep_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
 png("/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/figures/VlnPlot_ileum_group_met_pep_module_11_22_24.png", width = 2500, height = 1800, res = 300)
 plot(plot2 + ggtitle("Metallopeptidase activity module") +
        xlab("Cell types") + ylab("Module score"))
 dev.off()
+
+
+#test with biased genes 
+ileum_sub <- ileum_counts[ileum_counts$genes %in% met_pep_genes, ]
+
+ileum_g1 <- subset(ileum_sub, sig_strict == "1")
+
+ileum_g2 <- subset(ileum_sub, sig_strict == "-1")
+
+g1_gene <- rownames(ileum_g1)
+g2_gene <- rownames(ileum_g2)
+group_gene <- c(g1_gene, g2_gene)
+
+group_gene_met <- c("CLCA1", "CPO", "MME", "ENPEP", "MEP1A", "PRSS2", "NAALADL1", "ADAM10", "ANPEP", "SPG7", "DPEP1", "NPEPPS", "ACE", "AFG3L2", "MEP1B", "CNDP2", "PEPD", "ACE2", "XPNPEP2", "CLCA4", "CPA3", "LAP3", "MMP12")
+
+ileum <- AddModuleScore_UCell(ileum, features = list(group_gene_met), name = "met_pep_bias_sig")
 
 #chemokine receptor binding 
 
@@ -9105,11 +9143,30 @@ ileum <- AddModuleScore_UCell(ileum, features = list(chem_genes), name = "chem_s
 
 VlnPlot(ileum, features = "signature_1chem_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
 
+VlnPlot(ileum, features = "signature_1chem_bias_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
+
 plot3 <- VlnPlot(ileum, features = "signature_1chem_sig", group.by = "cell_typev2", split.by = "group", cols = c('#F8766D', '#619CFF'), pt.size = 0, sort = "decreasing") 
 png("/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/figures/VlnPlot_ileum_group_chemokine_recept_module_11_22_24.png", width = 2500, height = 1800, res = 300)
 plot(plot3 + ggtitle("Chemokine receptor binding module") +
        xlab("Cell types") + ylab("Module score"))
 dev.off()
+
+
+#chemokine receptor binding bias genes 
+ileum_sub_chem <- ileum_counts[ileum_counts$genes %in% chem_genes, ]
+
+ileum_g1_chem <- subset(ileum_sub_chem, sig_strict == "1")
+
+ileum_g2_chem <- subset(ileum_sub_chem, sig_strict == "-1")
+
+g1_gene_chem <- rownames(ileum_g1_chem)
+g2_gene_chem <- rownames(ileum_g2_chem)
+group_gene_chem <- c(g1_gene_chem, g2_gene_chem)
+
+group_gene_chem <- c("CCL25", "STAT1", "CCL20", "CXCL8", "CXCL9", "CXCL10", "CKLF", "CCL3", "CCL4")
+
+ileum <- AddModuleScore_UCell(ileum, features = list(group_gene_chem), name = "chem_bias_sig")
+
 
 #neutrophil chemotaxis 
 
@@ -9285,6 +9342,62 @@ pheatmap(
   color = colorRampPalette(c("blue", "white", "red"))(50) # Color scale
 )
 
+
+#-------------average gene counts for metallopeptidase activity------------#
+
+#load in seurat object 
+ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_group_mod_score.rds")
+
+DefaultAssay(ileum) <- "RNA"
+
+group_gene_met <- c("CLCA1", "CPO", "MME", "ENPEP", "MEP1A", "PRSS2", "NAALADL1", "ADAM10", "ANPEP", "SPG7", "DPEP1", "NPEPPS", "ACE", "AFG3L2", "MEP1B", "CNDP2", "PEPD", "ACE2", "XPNPEP2", "CLCA4", "CPA3", "LAP3", "MMP12")
+
+ileum$donor <- factor(ileum$donor, levels = c("donor1", "donor2", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", "donor10", "donor11", "donor12", "donor14", "donor17", "donor18", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor30", "donor34"))
+
+ileum_counts <- AverageExpression(ileum, assays = "RNA", features = group_gene_met, group.by = "donor", layer = "data")
+
+write.csv(ileum_counts, file = "/storage/home/swashburn30/Helmsley/Batch1_13/DEG_analysis/helm_batch1_13_ileum_scITD_group_donor_avg_met_pep_counts.csv")
+
+#--------create heatmap----------#
+ileum_donor <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_scITD_group_donor_avg_met_pep_counts.csv")
+
+rownames(ileum_donor) <- ileum_donor$X
+
+colnames(ileum_donor) <- c("genes", "donor1", "donor2", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", "donor10", "donor11", "donor12", "donor14", "donor17", "donor18", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor30", "donor34")
+
+ileum_donor <- subset(ileum_donor, select = -genes)
+
+# Example donor metadata
+donor_metadata <- data.frame(
+  donor = colnames(ileum_donor),
+  group = c("group1", "group1", "group1", "group1", "group1", "group2", "group2", "group1", "group1", "group2", "group1", "group2", "group1", "group2", "group1", "group1", "group2", "group1", "group2", "group2", "group1", "group2", "group2") # Example groups
+)
+
+# Annotate donors
+donor_annot <- HeatmapAnnotation(Group = donor_metadata$group)
+
+#subset to 17 genes and try again; code above worked but hard to see each gene 
+#scaled average gene expression 
+
+#subset_ileum_donor <- ileum_donor[rownames(ileum_donor) %in% group_gene, ]
+
+mat_scaled_sub <- t(scale(t(ileum_donor)))
+
+#this worked - use this 
+Heatmap(mat_scaled_sub, top_annotation = donor_annot, show_heatmap_legend = TRUE, cluster_columns = TRUE, name = "Z-score")
+
+# Create heatmap
+pheatmap(
+  as.matrix(ileum_donor),
+  cluster_rows = TRUE,           # Cluster genes
+  cluster_cols = TRUE,           # Cluster cells
+  scale = "row",                 # Scale expression per gene
+  annotation_col = donor_annot, # Annotate by group
+  color = colorRampPalette(c("blue", "white", "red"))(50) # Color scale
+)
+
+
+
 #---------Heatmap for neutrophil chemotaxis genes-------#
 
 #do this on server 
@@ -9300,16 +9413,8 @@ ileum_counts <- AverageExpression(ileum, assays = "RNA", features = neutrophil_c
 
 write.csv(ileum_counts, file = "/storage/home/swashburn30/Helmsley/Batch1_13/DEG_analysis/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_11_27_24.csv")
 
-#------read in the average gene expression data-------#
-ileum_neut_chem <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_11_27_24.csv")
 
-rownames(ileum_neut_chem) <- ileum_neut_chem$X
-
-colnames(ileum_neut_chem) <- c("genes", "donor1", "donor2", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", "donor10", "donor11", "donor12", "donor14", "donor17", "donor18", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor30", "donor34")
-
-ileum_neut_chem <- subset(ileum_neut_chem, select = -genes)
-
-#top neutrophil chemokine genes 
+#---------perform for just the biased genes-----------#
 ileum_sub_neut <- ileum_counts[ileum_counts$genes %in% neutrophil_chemotaxis_genes, ]
 
 ileum_g1_neut <- subset(ileum_sub_neut, sig_strict == "1")
@@ -9320,15 +9425,32 @@ g1_gene_neut <- rownames(ileum_g1_neut)
 g2_gene_neut <- rownames(ileum_g2_neut)
 group_gene_neut <- c(g1_gene_neut, g2_gene_neut)
 
+grop_gene_neut <- c("DPP4", "ITGA1", "LGALS3", "DAPK2", "CCL25", "CXADR", "CSF3R", "PDE4B", "S100A9", "S100A12", "S100A8", "FCER1G", "IL1B", "CCL20", "CXCL8", "CXCL9", "CXCL10", "CD74", "RIPOR2", "PPIA", "PPIB", "CKLF", "C1QBP", "CCL3", "CCL4", "ITGB2", "RAC2")
+
+ileum_counts_neut <- AverageExpression(ileum, assays = "RNA", features = grop_gene_neut, group.by = "donor", layer = "data")
+
+write.csv(ileum_counts_neut, file = "/storage/home/swashburn30/Helmsley/Batch1_13/DEG_analysis/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_bias.csv")
+
+#------read in the average gene expression data-------#
+
+#ileum_neut_chem <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_11_27_24.csv")
+
+ileum_neut_chem <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_bias.csv")
+
+rownames(ileum_neut_chem) <- ileum_neut_chem$X
+
+colnames(ileum_neut_chem) <- c("genes", "donor1", "donor2", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", "donor10", "donor11", "donor12", "donor14", "donor17", "donor18", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor30", "donor34")
+
+ileum_neut_chem <- subset(ileum_neut_chem, select = -genes)
+
 # Example donor metadata
 donor_metadata <- data.frame(
   donor = colnames(ileum_donor),
   group = c("group1", "group1", "group1", "group1", "group1", "group2", "group2", "group1", "group1", "group2", "group1", "group2", "group1", "group2", "group1", "group1", "group2", "group1", "group2", "group2", "group1", "group2", "group2") # Example groups
 )
 
-subset_ileum_neut <- ileum_neut_chem[rownames(ileum_neut_chem) %in% group_gene_neut, ]
+mat_scaled_sub_neut <- t(scale(t(ileum_neut_chem)))
 
-mat_scaled_sub_neut <- t(scale(t(subset_ileum_neut)))
 
 #this worked 
 Heatmap(mat_scaled_sub_neut, top_annotation = donor_annot, show_heatmap_legend = TRUE, cluster_columns = TRUE, name = "Z-score")
