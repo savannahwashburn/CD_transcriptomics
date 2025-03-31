@@ -20,9 +20,9 @@ random_split <- function(){
     set.seed(Sys.time())
     sub_sample <- rectum[, sample(Cells(rectum), size = cells.to.sample), seed = NULL]
     sub_other <- rectum[, !(colnames(rectum) %in% colnames(sub_sample))]
-    file_name <- paste0("rectum_sub_res50_", i, ".rds")
+    file_name <- paste0("rectum_sub_res20_", i, ".rds")
     saveRDS(sub_sample, file = file_name)
-    file_name2 <- paste0('rectum_sub2_res50_', i, ".rds")
+    file_name2 <- paste0('rectum_sub2_res20_', i, ".rds")
     saveRDS(sub_other, file = file_name2)
   }
 }
@@ -74,7 +74,7 @@ cluster_query <- function(rectum_files){
     rectum.combined <- RunPCA(rectum.combined, npcs = 15, verbose = FALSE)
     rectum.combined <- RunUMAP(rectum.combined, reduction = "pca", dims = 1:15)
     rectum.combined <- FindNeighbors(rectum.combined, reduction = "pca", dims = 1:15)
-    rectum.combined <- FindClusters(rectum.combined, resolution = 0.50)
+    rectum.combined <- FindClusters(rectum.combined, resolution = 0.20)
     
     #create unique file name for each SO
     #change file name to high res 
