@@ -8655,7 +8655,7 @@ pheatmap(spearman_matrix_high_low_pval,
          display_numbers = TRUE, 
          number_color = "black")  # Optionally display the actual Jaccard index values
 
-#-------------create Urko Barplot-------------#
+#-------------create Barplot-------------#
 
 #11/20/2024
 
