@@ -1,4 +1,4 @@
-# Single cell RNA sequencing signatures of treatment naïve Crohn’s disease across the intestines
+# Crohn’s disease subtypes identified by single cell RNA-sequencing signatures across treatment naïve intestinal samples 
 
 ## This project examines the variability of treatment naive Crohn's disease across donors and the small and large intestines using single-cell RNA sequencing. A clustering stability assessment workflow was developed to examine repeatability and robustness of clustering and downstream results. 
 
