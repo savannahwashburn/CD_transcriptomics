@@ -90,6 +90,231 @@ dev.off()
 #----------Supplementary Figure 2----------#
 
 #####Supp. Figure 2a#######
+
+ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_rPCA_10_17_24.rds")
+
+filt_barcodes <- scan('/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/stability_assessment/ileum/low_res/barcodes/filtered_low_res_barcodes_10_24_24.csv', what = "", sep = ",", skip = 1)
+
+barcodes <- colnames(ileum)
+
+unstable <- setdiff(barcodes, filt_barcodes)
+
+unstable_cells <- subset(ileum, cells = unstable)
+
+#label unstable cells 
+unstable_cells$stable_assignment <- "unstable"
+
+unstable_cells@meta.data$donor <- unstable_cells@meta.data$orig.ident
+unstable_cells$donor <- plyr::mapvalues(
+  x = unstable_cells$orig.ident,
+  from = c("helm_sam1", "helm_sam4", "helm_sam7", "helm_sam24", "helm_sam29", "helm_sam32", "helm_sam35", "helm_sam44", "helm_sam47", "helm_sam50", "helm_sam53", "helm_sam56", "helm_sam59", "helm_sam62", "helm_sam77", "helm_sam83", "helm_sam88", "helm_sam91", "helm_sam98", "helm_sam101", "helm_sam112", 'helm_sam119', 'helm_sam134', 'helm_sam147', 'helm_sam153', 'helm_sam162', 'helm_sam171'),
+  to = c('donor1', 'donor2', 'donor3', 'donor4', 'donor5', 'donor6', 'donor7', 'donor8', 'donor9', 'donor10', 'donor11', 'donor12', 'donor13', 'donor14', 'donor17', 'donor18', 'donor20', 'donor21', 'donor23', 'donor24', 'donor26', 'donor27', 'donor29', 'donor30', 'donor31', 'donor33', 'donor34')
+)
+
+
+#read in ileum SO - final SO 
+ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_cell_annotation_udpate_11_26_24.rds")
+
+#add stable lable 
+ileum$stable_assignment <- "stable"
+
+#merge unstable and ileum 
+ileum_unstable_merge <- merge(ileum, y = unstable_cells)
+
+#set ident to donor
+Idents(ileum_unstable_merge) <- ileum_unstable_merge$donor
+
+#n feature RNA
+
+VlnPlot(ileum_unstable_merge, features = c("nFeature_RNA"))
+
+#color by stability assessment 
+stability_color <- c("grey", "red")
+
+#order by donor (batch)
+ileum_unstable_merge$donor <- factor(ileum_unstable_merge$donor, levels = c('donor1', 'donor2', 'donor3', 'donor4', 'donor5', 'donor6', 'donor7', 'donor8', 'donor9', 'donor10', 'donor11', 'donor12', 'donor13', 'donor14', 'donor17', 'donor18', 'donor20', 'donor21', 'donor23', 'donor24', 'donor26', 'donor27', 'donor29', 'donor30', 'donor31', 'donor33', 'donor34'))
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_ileum_nfeature_stable_unstable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(ileum_unstable_merge, features = "nFeature_RNA", pt.size = 0, group.by = "donor", split.by = "stable_assignment", cols = stability_color) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y = element_blank()) + labs(title = "Gene count") + coord_flip())
+dev.off()
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_ileum_percentmt_stable_unstable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(ileum_unstable_merge, features = "percent.mt", pt.size = 0, group.by = "donor", split.by = "stable_assignment", cols = stability_color) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y = element_blank()) + labs(title = "Mitochondria percent") + coord_flip())
+dev.off()
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_ileum_ncount_stable_unstable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(ileum_unstable_merge, features = "nCount_RNA", pt.size = 0, group.by = "donor", split.by = "stable_assignment", cols = stability_color) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "UMI count") + coord_flip())
+dev.off()
+
+#colon 
+colon <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_colon_rpca_10_17_24.rds")
+
+filt_barcodes <- scan('/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/stability_assessment/colon/low_res/barcodes/filtered_low_res_barcodes_10_29_24.csv', what = "", sep = ",", skip = 1)
+
+barcodes <- colnames(colon)
+
+unstable <- setdiff(barcodes, filt_barcodes)
+
+unstable_cells <- subset(colon, cells = unstable)
+
+#stable assignment 
+unstable_cells$stable_assignment <- "unstable"
+
+unstable_cells@meta.data$donor <- unstable_cells@meta.data$orig.ident
+unstable_cells$donor <- plyr::mapvalues(
+  x = unstable_cells$orig.ident,
+  from = c("helm_sam2", "helm_sam8", "helm_sam26", "helm_sam31", "helm_sam33", "helm_sam36", "helm_sam45", "helm_sam48", "helm_sam52", "helm_sam54", "helm_sam57", "helm_sam60", "helm_sam63", "helm_sam65", "helm_sam66", "helm_sam71", "helm_sam72", "helm_sam78", "helm_sam84", "helm_sam86", "helm_sam89", "helm_sam92", "helm_sam96", "helm_sam99", "helm_sam102", "helm_sam110", "helm_sam113", "helm_sam120", "helm_sam128", "helm_sam129", "helm_sam135", "helm_sam148", "helm_sam154", "helm_sam157", "helm_sam163", "helm_sam172"),
+  to = c('donor1', 'donor3', 'donor4', 'donor5', 'donor6', 'donor7', 'donor8', 'donor9', 'donor10', 'donor11', 'donor12', 'donor13', 'donor14', 'donor15_s1', 'donor15_s2', 'donor16_s1', 'donor16_s2', 'donor17', 'donor18', 'donor19', 'donor20', 'donor21', 'donor22', 'donor23', 'donor24', 'donor25', 'donor26', 'donor27', 'donor28_s1', 'donor28_s2', 'donor29', 'donor30', 'donor31', 'donor32', 'donor33', 'donor34')
+)
+
+
+####Supp. Figure 2b####
+#load in filtered colon SO
+colon <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_colon_cell_annotation_11_26_24.rds")
+
+#add stable lable 
+colon$stable_assignment <- "stable"
+
+#merge unstable and colon 
+colon_unstable_merge <- merge(colon, y = unstable_cells)
+
+#order the donor 
+colon_unstable_merge$donor <- factor(colon_unstable_merge$donor, levels = c('donor1', 'donor3', 'donor4', 'donor5', 'donor6', 'donor7', 'donor8', 'donor9', 'donor10', 'donor11', 'donor12', 'donor13', 'donor14', 'donor15_s1', 'donor15_s2', 'donor16_s1', 'donor16_s2', 'donor17', 'donor18', 'donor19', 'donor20', 'donor21', 'donor22', 'donor23', 'donor24', 'donor25', 'donor26', 'donor27', 'donor28_s1', 'donor28_s2', 'donor29', 'donor30', 'donor31', 'donor32', 'donor33', 'donor34'))
+
+
+#set ident to donor
+Idents(colon_unstable_merge) <- colon_unstable_merge$donor
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_colon_nfeature_stable_unstable_9_23_25.pdf", width = 5, height = 12.5)
+plot(VlnPlot(colon_unstable_merge, features = "nFeature_RNA", pt.size = 0, group.by = "donor", split.by = "stable_assignment", cols = stability_color) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "Gene count") + coord_flip())
+dev.off()
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_colon_percentmt_stable_unstable_9_23_25.pdf", width = 5, height = 12.5)
+plot(VlnPlot(colon_unstable_merge, features = 'percent.mt', pt.size = 0, group.by = "donor", split.by = "stable_assignment", cols = stability_color) + theme(legend.position = "none") + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "Mitochondria Percent") + coord_flip())
+dev.off()
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_colon_ncount_rna_stable_unstable_9_23_25.pdf", width = 5, height = 12.5)
+plot(VlnPlot(colon_unstable_merge, features = 'nCount_RNA', group.by = "donor", split.by = "stable_assignment", cols = stability_color, pt.size = 0) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "UMI Count") + coord_flip())
+dev.off()
+
+
+####Supp. Figure 2C####
+
+#rectum 
+
+rectum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_rectum_rpca_10_17_24.rds")
+
+#load in stably assigned cells 
+filtered_values <- scan('/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/stability_assessment/rectum/low_res/barcodes/filtered_low_res_barcodes_11_4_24.csv', what = "", sep = ",", skip = 1)
+
+barcodes <- colnames(rectum)
+
+unstable <- setdiff(barcodes, filtered_values)
+
+unstable_cells <- subset(rectum, cells = unstable)
+
+unstable_cells@meta.data$donor <- unstable_cells@meta.data$orig.ident
+unstable_cells$donor <- plyr::mapvalues(
+  x = unstable_cells$orig.ident,
+  from = c("helm_sam3", "helm_sam9", "helm_sam25", "helm_sam30", "helm_sam34", "helm_sam37", "helm_sam46", "helm_sam49", "helm_sam51", "helm_sam55", "helm_sam58", "helm_sam61", "helm_sam64", "helm_sam67", "helm_sam73", "helm_sam79", "helm_sam85", "helm_sam87", "helm_sam90", "helm_sam93", "helm_sam97", "helm_sam103", "helm_sam111", "helm_sam114", "helm_sam121", "helm_sam130", "helm_sam136", "helm_sam149", "helm_sam155", "helm_sam158", "helm_sam164", "helm_sam173"),
+  to = c("donor1", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", 'donor10', "donor11", "donor12", "donor13", "donor14", "donor15", "donor16", "donor17", "donor18", "donor19", "donor20", "donor21", "donor22", "donor24", "donor25", "donor26", "donor27", "donor28", "donor29", "donor30", "donor31", "donor32", "donor33", "donor34")
+)
+
+unstable_cells$stable_assignment <- "unstable"
+
+#load in filtered rectum SO 
+rectum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_rectum_cell_annotation_12_8_24.rds")
+
+rectum$stable_assignment <- "stable"
+
+#merge 
+rectum_unstable_merge <- merge(rectum, y = unstable_cells)
+
+
+
+#order the rectum data 
+rectum_unstable_merge$donor <- factor(rectum_unstable_merge$donor, levels = c("donor1", "donor3", "donor4", "donor5", "donor6", "donor7", "donor8", "donor9", 'donor10', "donor11", "donor12", "donor13", "donor14", "donor15", "donor16", "donor17", "donor18", "donor19", "donor20", "donor21", "donor22", "donor24", "donor25", "donor26", "donor27", "donor28", "donor29", "donor30", "donor31", "donor32", "donor33", "donor34"))
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_rectum_nfeature_rna_stable_ustable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(rectum_unstable_merge, features = 'nFeature_RNA', group.by = "donor", split.by = "stable_assignment", cols = stability_color, pt.size = 0) + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "Gene Count") + coord_flip())
+dev.off()
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_rectum_percentmt_stable_unstable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(rectum_unstable_merge, features = 'percent.mt', group.by = "donor", split.by = "stable_assignment", cols = stability_color, pt.size = 0) + theme(legend.position = "none") + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "Mitochondria Percent") + coord_flip())
+dev.off()
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/VlnPlot_helm_batch1_13_rectum_ncount_rna_stable_unstable_9_23_25.pdf", width = 5, height = 12)
+plot(VlnPlot(rectum_unstable_merge, features = 'nCount_RNA', group.by = "donor", split.by = "stable_assignment", cols = stability_color, pt.size = 0) + theme(legend.position = "none") + geom_boxplot(width=0.2, position = position_dodge(width = 0.9),outlier.shape = NA,) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + labs(title = "UMI Count") + coord_flip())
+dev.off()
+
+
+######Supp. Figure 2e####
+#-------stacked bar plot of stably assigned vs. unstably assigned cells----------#
+
+#load in rPCA seurat object 
+
+ileum <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_ileum_rPCA_10_17_24.rds")
+
+#ileum barcodes 
+barcodes <- colnames(ileum)
+
+#load in stably assigned cells 
+filtered_values <- scan('/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/stability_assessment/ileum/low_res/barcodes/filtered_low_res_barcodes_10_24_24.csv', what = "", sep = ",", skip = 1)
+
+
+unstable <- setdiff(barcodes, filtered_values)
+
+DimPlot(ileum, reduction = "umap", cells.highlight = unstable, sizes.highlight = 0.1) + scale_color_manual(labels = c("Stably Assigned Cells", "Unstably Assigned Cells"), values = c("grey", "red"))
+
+#add meta data labeling stable and unstable cells 
+ileum$stable_assignment <- ifelse(
+  colnames(ileum) %in% unstable,
+  "unstable",   # label for cells in the vector
+  "stable"     # label for cells not in the vector
+)
+
+#add broad cell type labeling 
+ileum@meta.data$cell_type_broad <- ileum@meta.data$seurat_clusters
+ileum$cell_type_broad <- plyr::mapvalues(
+  x = ileum$seurat_clusters,
+  from = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"),
+  to = c("Naive B Cell", 'Stem/Paneth Cell', 'Enterocyte', 'CD4 T Cell', 'Plasma Cell', 'Macrophage', 'NK/CD8 T Cell', 'Goblet Cell', 'Monocyte', 'Memory B Cell', 'Mesenchymal Cell', "Endothelial Cell", "Mast Cell", "Tuft Cell", "Doublet Cell", "Plasmablast")
+)
+
+#create new label 
+ileum$celltype_stable <- paste(ileum$cell_type_broad, ileum$stable_assignment, sep = "_")
+
+
+
+pt <- table(ileum$cell_type_broad, ileum$stable_assignment)
+pt <- as.data.frame(pt)
+pt$Var1 <- as.character(pt$Var1)
+
+pt$Var1 <- factor(pt$Var1, levels = c("Naive B Cell", "Memory B Cell", "Plasma Cell", "Plasmablast", "CD4 T Cell", "NK/CD8 T Cell", "Macrophage", "Monocyte", "Mast Cell", "Stem/Paneth Cell", "Enterocyte", "Goblet Cell", "Tuft Cell", "Mesenchymal Cell", "Endothelial Cell", "Doublet Cell"))
+
+pdf("/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure8_7_30_25/StackedBarPlot_batch1_13_ileum_stable_unstable_8_6_25.pdf", width = 10, height = 8)
+plot(ggplot(pt, aes(x = Var1, y = Freq, fill = Var2)) +
+       scale_fill_manual(values = c("grey", "red")) +
+       theme_bw(base_size=16) +
+       geom_col(position = "fill", width = 0.5) +
+       xlab("Broad Cell Type") +
+       theme(axis.text.x = element_text(angle=90, vjust=0.5, size=16)) +
+       theme(axis.title.x = element_text(size = 16), axis.title.y = element_text(size = 16)) +
+       ylab("Proportion") +
+       
+       #scale_fill_discrete(breaks=c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+       theme(legend.title = element_blank()) +
+       theme(legend.text=element_text(size=16)) +
+       theme(axis.text.x = element_text(angle=90, vjust=0.5, size=16)) +
+       theme(axis.text.y = element_text(size=16)))
+dev.off()
+
+#-----------------Supplementary Figure 3----------------#
+#####Supp. Figure 3a#######
 #ileum high resolution stably assigned cell
 #blue = t cells 
 blue <- randomColor(8, hue = c("blue"))
@@ -171,7 +396,7 @@ plot(ggplot(pt, aes(x = Var2, y = Freq, fill = Var1)) +
   theme(axis.text.y = element_text(size=16))
 dev.off()
 
-#####Supp. Figure 2b#######
+#####Supp. Figure 3b#######
 
 #ileum reference clustering results 
 
@@ -227,7 +452,7 @@ plot(ggplot(pt, aes(x = Var2, y = Freq, fill = Var1)) +
   theme(axis.text.y = element_text(size=16))
 dev.off()
 
-#####Supp. Figure 2c#######
+#####Supp. Figure 3c#######
 
 DefaultAssay(ileum) <- "RNA"
 
@@ -259,9 +484,9 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 plot(DotPlot(rectum, features = marker_genes, group.by = "cell_typev2") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16), axis.text.y = element_text(color="black", size=16), axis.title.x=element_blank(), axis.title.y=element_blank()) + theme(legend.text=element_text(size=16)) + coord_flip())
 dev.off()
 
-#----------Supplementary Figure 3----------#
+#----------Supplementary Figure 4----------#
 
-#####Supp. Figure 3a#######
+#####Supp. Figure 4a#######
 
 #use ileum, colon, and rectum SO from supp. figure 1
 
@@ -479,7 +704,7 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 plot(plot)
 dev.off()
 
-#####Supp. Figure 3b#######
+#####Supp. Figure 4b#######
 
 #ileum
 
@@ -531,7 +756,7 @@ hmap <- pheatmap(props_transformed,
                  color = colorRampPalette(c("navy", "white", "firebrick3"))(50))
 hmap
 
-#####Supp. Figure 3c#######
+#####Supp. Figure 4c#######
 
 #colon
 
@@ -584,7 +809,7 @@ hmap
 
 save_pheatmap_pdf(hmap, "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/colon/heatmap_batch1_13_colon_hierarchical_cluster_cellprop_v1_11_25_24.pdf", width = 8, height = 5)
 
-#####Supp. Figure 3c#######
+#####Supp. Figure 4d#######
 
 #rectum 
 
@@ -694,9 +919,76 @@ fisher_test
 #alternative hypothesis: two.sided
 
 
-#----------Supplementary Figure 4----------#
+####Supp. Figure 4e####
+monocyte_props <- colon@meta.data %>%
+  dplyr::group_by(donor) %>%
+  dplyr::mutate(total_cells = n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::group_by(donor, cell_typev1, macro_IF) %>%
+  dplyr::summarize(
+    n_cells = n(),
+    total_cells = unique(total_cells),
+    proportion = n_cells / total_cells,
+    .groups = "drop"
+  ) %>%
+  dplyr::filter(cell_typev1 == "Monocyte")
 
-#####Supp. Figure 4a#######
+
+plot_s4e <- ggplot(monocyte_props, aes(x = macro_IF, y = proportion, fill = macro_IF)) +
+  #geom_violin(trim = FALSE, alpha = 0.5) +
+  geom_boxplot() +
+  labs(
+    fill = "Macro IF status",
+    x = "Macro IF status",
+    y = "Proportion of Monocytes"
+  ) +
+  scale_fill_manual(values = c("IF" = "#CC79A7", "NI" = "#009E73")) +
+  theme_minimal(base_size = 16) 
+#theme(plot.background = element_rect(fill = "white")) +
+#theme_minimal(base_size = 16)
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure3_12_18_24/BoxPlot_colon_monocyte_prop_macro_IF_6_25_24.pdf", width = 5, height = 5)
+plot(plot_s4e)
+dev.off()
+
+####Supp. Figure 4f####
+#proportion of monocytes - micro IF status 
+total_cells_df <- as_tibble(colon@meta.data) %>%
+  group_by(donor) %>%
+  summarize(total_cells = n(), .groups = "drop")
+
+# Step 2: Get monocyte counts per donor and micro_IF
+monocyte_props_micro <- colon@meta.data %>%
+  as.data.frame() %>%
+  dplyr::filter(cell_typev1 == "Monocyte") %>%
+  dplyr::group_by(donor, micro_IF) %>%
+  dplyr::summarize(n_cells = n(), .groups = "drop") %>%
+  dplyr::left_join(total_cells_df, by = "donor") %>%
+  dplyr::mutate(proportion = n_cells / total_cells)
+
+plot_s4f <- ggplot(monocyte_props_micro, aes(x = micro_IF, y = proportion, fill = micro_IF)) +
+  #geom_violin(trim = FALSE, alpha = 0.5) +
+  geom_boxplot() +
+  labs(
+    fill = "Micro IF status",
+    x = "Micro IF status",
+    y = "Proportion of Monocytes"
+  ) +
+  scale_fill_manual(values = c("IF" = "#CC79A7", "NI" = "#009E73")) +
+  theme_minimal(base_size = 16) 
+#theme(plot.background = element_rect(fill = "white")) +
+#theme_minimal(base_size = 16)
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure3_12_18_24/BoxPlot_colon_monocyte_prop_micro_IF_7_30_24.pdf", width = 5, height = 5)
+plot(plot_s4f)
+dev.off()
+
+
+
+#----------Supplementary Figure 5----------#
+
+#####Supp. Figure 5a#######
 
 #enterocyte volcano plot 
 
@@ -733,7 +1025,7 @@ plot(volcano_gaussian)
 dev.off()
 
 
-#####Supp. Figure 4b#######
+#####Supp. Figure 5b#######
 
 ent_g2 <- rownames(ent_DEG_up)
 
@@ -754,7 +1046,7 @@ barplot(ego, showCategory = 12, font.size = 16)
 dev.off()
 
 
-#####Supp. Figure 4c#######
+#####Supp. Figure 5c#######
 
 cellchat_g1 <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/cell_chat/ileum/data/helm_batch1_13_ileum_group1_cellchat_obj_11_23_24.rds")
 
@@ -769,7 +1061,7 @@ plot(rankNet(cellchat, mode = "comparison", measure = "weight", color.use = c('#
 dev.off()
 
 
-#####Supp. Figure 4d#######
+#####Supp. Figure 5d#######
 
 #metallopeptidase activity genes
 
@@ -794,14 +1086,14 @@ donor_annot <- HeatmapAnnotation(Group = donor_metadata$group,  col = list(Group
 
 mat_scaled_sub <- t(scale(t(ileum_donor)))
 
-#this worked - use this 
+
 plot_mp <- Heatmap(mat_scaled_sub, top_annotation = donor_annot, show_heatmap_legend = TRUE, cluster_columns = TRUE, name = "Z-score", row_names_gp = gpar(fontsize = 16), column_names_gp = gpar(fontsize = 16), heatmap_legend_param = list(labels_gp = gpar(fontsize = 16)))
 
 pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure4_12_18_24/Heatmapt_batch1_13_ileum_group_met_pep_bias_gene.pdf", width = 10, height = 8)
 plot(plot_mp)
 dev.off()
 
-#####Supp. Figure 4e#######
+#####Supp. Figure 5e#######
 
 ileum_neut_chem <- read.csv(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/pseudobulk_deg/ileum/data/helm_batch1_13_ileum_scITD_group_donor_avg_counts_neut_chem_bias.csv")
 
@@ -819,7 +1111,7 @@ donor_metadata <- data.frame(
 
 mat_scaled_sub_neut <- t(scale(t(ileum_neut_chem)))
 
-#this worked 
+
 Heatmap(mat_scaled_sub_neut, top_annotation = donor_annot, show_heatmap_legend = TRUE, cluster_columns = TRUE, name = "Z-score")
 
 plot_neut <- Heatmap(mat_scaled_sub_neut, top_annotation = donor_annot, show_heatmap_legend = TRUE, cluster_columns = TRUE, name = "Z-score", row_names_gp = gpar(fontsize = 16), column_names_gp = gpar(fontsize = 16), heatmap_legend_param = list(labels_gp = gpar(fontsize = 16)))
@@ -829,9 +1121,9 @@ plot(plot_neut)
 dev.off()
 
 
-#----------Supplementary Figure 5----------#
+#----------Supplementary Figure 6----------#
 
-#####Supp. Figure 5a#######
+#####Supp. Figure 6a#######
 colon <- readRDS(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/seurat_object/helm_batch1_13_colon_scITD_group_UCell_score_12_7_24.rds")
 
 colon$donor <- factor(colon$donor, levels = c("donor1", "donor3", "donor6", "donor7", "donor10", "donor12", "donor13", "donor15_s2", "donor16_s2", "donor17", "donor19", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor32", "donor34", "donor11", "donor14", "donor15_s1", "donor16_s1", "donor18", "donor22", "donor25", "donor28_s1", "donor28_s2", "donor29", "donor30", "donor31", "donor33"))
@@ -845,7 +1137,7 @@ plot(VlnPlot(colon, features = "signature_1mac_sig", group.by = "cell_typev1", p
 dev.off()
 
 
-#####Supp. Figure 5b#######
+#####Supp. Figure 6b#######
 
 metadata <- pb@colData
 metadata <- as.data.frame(metadata)
@@ -945,7 +1237,7 @@ plot(plot)
 dev.off()
 
 
-#####Supp. Figure 5c#######
+#####Supp. Figure 6c#######
 
 #colon cellchat figure 
 
@@ -964,9 +1256,9 @@ plot(rankNet(cellchat, mode = "comparison", measure = "weight", color.use = c('#
 dev.off()
 
 
-#----------Supplementary Figure 6----------#
+#----------Supplementary Figure 7----------#
 
-#####Supp. Figure 6a#######
+#####Supp. Figure 7a#######
 
 #myeloid cell pathway enrichment in group 1
 
@@ -990,7 +1282,7 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 barplot(ego, showCategory = 8, font.size = 16)
 dev.off()
 
-#####Supp. Figure 6b#######
+#####Supp. Figure 7b#######
 
 #cell chat barplot
 
@@ -1007,7 +1299,7 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 plot(rankNet(cellchat, mode = "comparison", measure = "weight", color.use = c("#F06292", "#6A9FB5"), sources.use = NULL, targets.use = NULL, stacked = T, do.stat = TRUE, font.size = 12))
 dev.off()
 
-#####Supp. Figure 6c#######
+#####Supp. Figure 7c#######
 
 #TNF pathway enriched in group 2 chord plot 
 
@@ -1022,7 +1314,7 @@ netVisual_chord_cell(cellchat_g2, lab.cex = 1, signaling = "TNF", color.use = co
 dev.off()
 
 
-#####Supp. Figure 6d#######
+#####Supp. Figure 7d#######
 
 #IFN gamma module score 
 
@@ -1043,7 +1335,7 @@ plot(VlnPlot(rectum, features = "signature_1ifn_sig", group.by = "cell_typev2", 
 dev.off()
 
 
-#####Supp. Figure 6e#######
+#####Supp. Figure 7e#######
 
 #TNF module score 
 
@@ -1056,13 +1348,82 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 plot(VlnPlot(rectum, features = "signature_1tnf_sig", group.by = "cell_typev2", pt.size = 0, split.by = "group", cols = c('#F06292', '#6A9FB5'), sort = "decreasing") + theme(legend.position = "none") + theme(axis.text.x = element_text(color="black", size=16),axis.text.y = element_text(color="black", size=16), axis.title.y = element_text(size = 16), legend.text = element_text(size = 16), legend.title = element_text(size = 16)) + ggtitle("Response to TNFs module"))
 dev.off()
 
-#------------Supplementary Figure 7-------------#
+#------------Supplementary Figure 8-------------#
+
+#combined GWAS analysis
+#read in marginal results 
+df_marg <- read_table(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/MAGMA_analysis/data/helm_batch1_13_gca_conti_spe_2025.gsa.out", skip=4) %>% 
+  subset(select=-c(TYPE, NGENES, BETA, BETA_STD, SE)) %>% 
+  dplyr::rename(P_marg = P) %>% 
+  dplyr::arrange(P_marg)
+
+n_sig <- ceiling(sqrt(nrow(df_cond))) #3
+n_clusters <- nrow(df_marg)
+
+#combine marginal and conditional results 
+df_comb <- left_join(df_cond, df_marg, by = "VARIABLE")
+df_comb <- df_comb %>% 
+  mutate(VarCode = rep(c("a", "b"),times=nrow(df_comb)/2)) %>%
+  pivot_wider(names_from = VarCode, values_from=c(VARIABLE, P_cond, P_marg)) %>%
+  mutate(PS_a=log10(P_cond_a)/log10(P_marg_a), PS_b=log10(P_cond_b)/log10(P_marg_b))
+# assert order
+stopifnot(df_comb$P_marg_a <= df_comb$P_marg_b)
+
+#reverse the order of forward selection if the criterion below is reached 
+select_list <- df_marg$VARIABLE[1:n_sig]
+reverse_list <- df_comb$VARIABLE_a[df_comb$PS_a < 0.2 & df_comb$PS_b >= 0.2]
+select_list <- select_list[select_list %in% reverse_list == F][-1]
+
+# The independent list starts with the most marginally significant cell type
+indep_list <- c(toString(df_marg[1,1])) 
+for (cur_var in select_list) {
+  for (indep_var in indep_list) {
+    # drop if the condition indicates so with any cell types in indep_list
+    df_cur = df_comb[df_comb$VARIABLE_a==indep_var & df_comb$VARIABLE_b==cur_var,]
+    if ((df_cur$PS_a >= 0.8 & df_cur$PS_b >= 0.8) | 
+        (df_cur$PS_a >= 0.5 & df_cur$PS_b >= 0.5 & df_cur$P_cond_b < 0.001)) {
+      if (tail(indep_list,1) == indep_var) indep_list <- c(indep_list, cur_var)
+    } else break
+  }
+}
+cat(indep_list)
+
+#regulatory t cell and monocyte
+bonferroni_threshold <- 0.05 / nrow(df_marg)
+
+df_marg$cleaned_column <- gsub("^RNA\\.", "", df_marg$VARIABLE) # remove "RNA."
+df_marg$cleaned_column <- gsub("\\.", " ", df_marg$cleaned_column)     # replace "." with space
+
+df_marg$cleaned_column <- factor(df_marg$cleaned_column, levels = c("Naive B Cell", "Memory B Cell", "Cycling B Cell","Plasma Cell", "IgA Plasma Cell", "IgG Plasma Cell", "Plasmablast", "Ambig  B Cell", "CD4 T Cell", 'CD8 T Cell', "NK CD8 T Cell", "ILC3", "Regulatory T Cell", "Ambig  T Cell", "Macrophage", "Monocyte", "Pro Inflammatory Monocyte", "Mast Cell", "Stem Cell", "Stem Paneth Cell", "Stem TA Cell", "TA Cell", "Enterocyte", "Colonocyte", "Mature Colonocyte", "BEST4 Colonocyte", "Goblet Cell", "Tuft Cell", "Enteroendocrine Cell", "Mesenchymal Cell", "Endothelial Cell"))
+cols <- c(green[1], green[2], green[4], green[3], green[3], green[5], green[6], green[7], blue[1], blue[6], blue[2], blue[8], blue[5], blue[3], orange[1], orange[2], orange[3], orange[4], pink[1], pink[1], pink[1], pink[6], pink[2], pink[2], pink[10], pink[4], pink[3], pink[5], pink[12], purple[1], purple[2])
+
+sfig_8 <- df_marg %>% 
+  # create the plot
+  ggplot(aes(x = cleaned_column, y = -log10(P_marg), colour = factor(cleaned_column))) +
+  geom_point(aes(size = -log10(P_marg))) +
+  geom_hline(yintercept = -log10(bonferroni_threshold), linetype = "dashed", color = "red", size = 0.8) +
+  theme_classic() +
+  scale_size_area(max_size = 9) +
+  #guides(color = guide_legend(title = "Cell type")) +
+  theme(legend.position = "none", axis.text.x = element_text(color="black", size=16, angle = 60, hjust = 1),axis.text.y = element_text(color="black", size=16), axis.title.x = element_text(size = 16), axis.title.y = element_text(size = 16), legend.title = element_text(size = 16), legend.text = element_text(size = 16)) + 
+  scale_color_manual(values = cols)+
+  #scale_x_discrete(labels = c("RNA.Naive.B.Cell" = "Naive B Cell", "RNA.Memory.B.Cell" = "Memory B Cell", "Cycling_B_Cell" = "Cycling B Cell", "Plasma_Cell" = "Plasma Cell", "Ambig__B_Cell" = "Ambig. B Cell", "CD4_T_Cell" = "CD4 T Cell", "CD8_T_Cell" = 'CD8 T Cell', "NK_CD8_T_Cell" = "NK/CD8 T Cell", "ILC3" = "ILC3", "Ambig__T_Cell" = "Ambig. T Cell", "Ambig__T_Cell", "Macrophage" = "Macrophage", "Monocyte" = "Monocyte", "Mast_Cell" = "Mast Cell", "Stem_Cell" = "Stem Cell", "TA_Cell" = "TA Cell", "Colonocyte" = "Colonocyte", "Mature_Colonocyte" = "Mature Colonocyte", "Goblet_Cell" = "Goblet Cell", "Tuft_Cell" = "Tuft Cell", "Enteroendocrine_Cell" = "Enteroendocrine Cell", "Mesenchymal_Cell" = "Mesenchymal Cell", "Endothelial_Cell" = "Endothelial Cell")) +
+  xlab("Cell types") +
+  ylab("-log10(p value)")
+
+
+pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supplementary_figures/supp_figure9_7_30_25/ScatterPlot_all_topcell_bonferroni.pdf", width = 9, height = 7)
+sfig_8
+dev.off()
+
+
+#----------Supp. Figure 9-------------#
 
 #Venn diagram of group assignment 
 
 library(ggVennDiagram)
 
-#######Fig 7a########
+#######Fig 9a########
 
 #pro-inflammatory group 
 G_proinflam <- list(Ileum = c("donor6", "donor7", "donor10", "donor12", "donor17", "donor21", "donor24", "donor26", "donor30", "donor34"), Colon = c("donor11", "donor14", "donor15", "donor16", "donor18", "donor22", "donor25", "donor28", "donor28", "donor29", "donor30", "donor31", "donor33"), Rectum = c("donor4", "donor10", "donor14", "donor16", "donor18", "donor21", "donor22", "donor25", "donor28", "donor30", "donor31", "donor33", "donor34"))
@@ -1073,7 +1434,7 @@ pdf(file = "/Users/swashburn30/Desktop/Helmsley_Project/Batch1_13/figures/supple
 plot(venn_proinflam)
 dev.off()
 
-#######Fig 7b########
+#######Fig 9b########
 #other group
 
 G_other <- list(Ileum = c("donor1", "donor2", "donor3", "donor4", "donor5", "donor8", "donor9", "donor11", "donor14", "donor18", "donor20", "donor23", "donor27"), Colon = c("donor1", "donor3", "donor6", "donor7", "donor10", "donor12", "donor13", "donor15_s2", "donor16_s2", "donor17", "donor19", "donor20", "donor21", "donor23", "donor24", "donor26", "donor27", "donor32", "donor34"), Rectum = c("donor1", "donor5", "donor6", "donor7", "donor11", "donor12", "donor13", "donor15", "donor17", "donor19", "donor20", "donor26", "donor27", "donor29", "donor32"))
